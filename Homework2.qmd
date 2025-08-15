@@ -1,0 +1,184 @@
+---
+title: "Homework2"
+format: html
+editor: visual
+---
+
+## Natalie Huante - Homework #2
+
+### Data
+
+Loading in the provided dataset and printing out the first few rows to verify that it was loaded in correctly.
+
+```{r}
+library(readr)
+
+data <- read_delim("hw2.csv", delim = ",")
+
+head(data)
+
+```
+
+### Question 1 - Hypothesis Testing
+
+Andrew and Betty are arguing about who is better at leading their Joy Group. Joy groups were randomly assigned when employees joined the company. Is there evidence that Group A and Group B have the same mean anxiety score?
+
+#### Frequentist Approach
+
+As my frequentist approach, I will use Fisherian Hypothesis Testing. We will run a GLM that will look at the effect of joy group membership on anxiety levels. The null hypothesis is that the effect is 0 (no effect).
+
+```{r}
+# fit the model according to the above
+model <- glm(anxiety ~ group, 
+             data = data, 
+             family = gaussian())
+
+# print out the summary stats
+summary(model)
+```
+
+#### Bayesian Approach
+
+To compare posterior odds to prior odds, we will fit two different GLM models, one that includes the group variable as a covariate and one that doesn't. We are using normal distributions as our prior distributions (more reasoning can be found in the report). We then calculate the bayes factor to assess the significance of including the group variable as a predictor.
+
+```{r}
+data$group <- as.factor(data$group)
+```
+
+```{r}
+#install.packages("brms")
+library(brms)
+
+# declare priors
+priors <- prior(normal(0,5), class = b) +
+          prior(cauchy(0,2), class = sigma)
+
+
+
+# model 1: with group effect 
+# H1: group membership does have an effect on anxiety levels
+fit1 <- brm(
+  anxiety ~ group,
+  data = data,
+  family = gaussian(), # Normal distribution for continuous outcome
+  prior = priors,
+  save_pars = save_pars(all = TRUE),
+  silent = 2, refresh = 0
+)
+```
+
+```{r}
+
+priors_model2 <-  prior(normal(0,5), class = Intercept) +
+                  prior(cauchy(0,2), class = sigma)
+
+# model 2: without group effect 
+# H0: group membership does not have an effect on anxiety levels
+fit2 <- brm(
+  anxiety ~ 1, # Intercept-only model (no group effect)
+  data = data,
+  family = gaussian(),
+  prior = priors_model2,
+  save_pars = save_pars(all = TRUE),
+  silent = 2, refresh = 0
+)
+```
+
+```{r}
+
+# compute the bayes factor
+bf <- bayes_factor(fit1, fit2)
+print(bf)
+```
+
+### Question 2 - Parameter Estimation
+
+assuming the DAG shown below is correct, and using covariates in a regression (GLM) model to adjust for variables, what is the direct causal effect of petting corgis on mental well-being? Be sure to include both a point estimate and interval estimate.
+
+#### DAG Provided
+
+```{r}
+library(ggdag)
+library(dagitty)
+hw_dag <- dagify(
+  mental_well ~ corgi + married + sex  + anxiety + age,
+  married ~  age,
+  income ~ age + married + sex,
+  waived_insurance ~ income + married,
+  therapy ~ anxiety + waived_insurance + income + mental_well,
+  veggies_week ~ age + married + income,
+  hair_color ~ age ,
+  corgi ~ age,
+  anxiety ~ group + age + corgi,
+  exposure = "corgi",
+  outcome = "mental_well"
+  )
+
+ggdag(hw_dag, node_size = 20, layout = "sugiyama",
+      text_col = "orange") + theme_dag()
+```
+
+#### Frequentist Approach
+
+As our frequentist approach, we will calculate the confidence interval for the output of a GLM.
+
+```{r}
+# make sure our hair color variable is a factor
+data$hair_color <- as.factor(data$hair_color)
+
+# glm model
+frequentist_model <- glm(mental_well ~ corgi + age + income_k + hair_color, 
+                         data = data, 
+                         family = gaussian())
+
+# print glm output 
+summary(frequentist_model)
+
+# confidence interval calculation 
+confint(frequentist_model, parm="corgi")
+
+```
+
+#### Bayesian Approach
+
+```{r}
+#install.packages("brms")
+library(brms)
+
+# declare priors
+priors <- prior(normal(0,1), class = b) +
+          prior(cauchy(0,2), class = sigma)
+
+# glm model 
+bayesian_model <- brm(mental_well ~ corgi + age + income_k + hair_color, 
+                      data = data, 
+                      family = gaussian(), 
+                      prior = priors, 
+                      iter = 4000, 
+                      warmup = 1000, 
+                      chains = 4, 
+                      cores = 4, 
+                      seed = 123)
+
+# output from glm model 
+summary(bayesian_model)
+
+
+
+```
+
+```{r}
+# plot the credible interval for glm model 
+plot(bayesian_model)
+
+```
+
+```{r}
+
+# get the posterior samples for corgi 
+posterior_samples <- posterior_samples(bayesian_model, pars = 'b_corgi')
+
+# calculate the 95% credible interval for corgi 
+posterior_interval <- posterior_summary(bayesian_model, pars = 'b_corgi')
+posterior_interval
+```

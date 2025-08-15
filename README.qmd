@@ -1,0 +1,41 @@
+---
+title: "README" 
+format: html 
+editor: visual 
+---
+
+# README - Homework 2
+
+## Personal Info
+
+-   Natalie Huante
+-   Student ID: 2374481
+-   Email: huante\@chapman.edu
+-   Course: CPSC 540-01 - Statistical Machine Learning I
+-   Term: Fall 2024 Semester
+-   Assignment 2
+
+## Files Included
+
+-   this README file
+-   Homework2.qmd
+    -   Includes the R Code used to produce any figures, tables, etc. for the report.
+-   Report PDF File
+    -   Includes the in-detail description, proposal, and discussion on the analysis.
+
+## Known Compile or Runtime Errors
+
+-   There are no compile and/or runtime errors that I am aware of in the .qmd file included
+-   I did run into some issues when installing brms for the first time, but I just cleared and restarted R and then ran some lines that seemed to clean it up well, so it is all working properly now.
+
+## References
+
+-   These can also be found under the references section of the report or at the bottom of the .qmd file.
+
+-   chelsea lecture slide
+
+-   chelsea homework 2 instructions
+
+-   confidence vs credible intervals
+
+    -   towardsdatascience.com/statistics-101-credible-vs-confidence-interval-af7b7e8fdd79.
